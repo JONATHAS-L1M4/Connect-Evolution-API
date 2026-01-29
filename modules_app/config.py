@@ -10,7 +10,12 @@ import requests
 # =========================
 load_dotenv()
 
-DOMAIN = os.getenv("EVOLUTION_DOMAIN") or ""
+# Garante que EVOLUTION_DOMAIN tenha esquema (http/https)
+_raw_domain = (os.getenv("EVOLUTION_DOMAIN") or "").strip().rstrip("/")
+if _raw_domain and not _raw_domain.startswith(("http://", "https://")):
+    _raw_domain = "https://" + _raw_domain
+DOMAIN = _raw_domain
+
 requests.packages.urllib3.disable_warnings()  # noqa
 
 # Paths base (BASE_DIR = raiz do projeto; este arquivo está em /modulo)

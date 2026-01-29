@@ -6,6 +6,13 @@ from .utils import _extract_qrcode
 
 def fetch_qr_code_status(instance_name: str, apikey: str) -> Dict[str, Any]:
     # Chama o endpoint do servidor WPP para pegar status e/ou QR. Aceita vários formatos.
+    if not DOMAIN:
+        return {
+            "qrcode": None,
+            "qr_format": None,
+            "status": "error",
+            "message": "EVOLUTION_DOMAIN não configurado.",
+        }
     try:
         url = f"{DOMAIN}/instance/connect/{instance_name}"
         headers = {"apikey": apikey}

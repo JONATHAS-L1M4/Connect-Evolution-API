@@ -189,9 +189,19 @@ def create_token(ttl_seconds: int, payload: Dict[str, Any], one_time: bool = Fal
 
 
 def build_link(token: str) -> str:
+    """
+    Monta o link que será enviado ao cliente.
+    Ajuste: garantir que haja uma barra antes do querystring (?t=...),
+    pois o domínio pode não ter path definido e alguns clientes reclamaram
+    do formato sem "/?t=...".
+    """
     if not BASE_URL:
-        return f"/t={token}"
-    return f"{BASE_URL}?t={token}"
+        return f"/?t={token}"
+
+    base = BASE_URL
+    if not base.endswith("/"):
+        base += "/"
+    return f"{base}?t={token}"
 
 
 def get_or_create_connect_link(instance: str, apikey: str, ttl_seconds: int = 8 * 60 * 60) -> Tuple[str, str, bool]:

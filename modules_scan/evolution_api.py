@@ -1,31 +1,22 @@
-# modulo/evolution_api.py
-"""
-Chamadas à Evolution Global API (instâncias, QR/status, logout).
-Não altera a estrutura do algoritmo original.
-"""
+from typing import Any, Dict, List, Tuple
 
-import json
 import requests
-from typing import List, Dict, Any, Tuple
 
 from . import config
 from .utils import build_url
 
 
+def _pick_first(it: Dict[str, Any], keys: List[str]) -> Any:
+    for k in keys:
+        v = it.get(k)
+        if v not in (None, ""):
+            return v
+    return None
+
+
 def fetch_instances_from_api() -> List[Dict[str, Any]]:
-    """
-    Lê todas as instâncias via Evolution Global API e normaliza para:
-      {
-        "name": "<instance_name>",
-        "key": "<token_da_instancia>",
-        "customer_number": "<numero_cadastrado>",
-        "instance_number": "<numero_cadastrado>",
-        "owner_jid": "<ownerJid>",
-        "connection_status": "<open|close|...>"
-      }
-    """
     if not config.API_KEY:
-        print("[ERRO] EVOLUTION_GLOBAL_KEY não configurada.")
+        print("[ERRO] EVOLUTION_GLOBAL_KEY nao configurada.")
         return []
 
     try:
@@ -40,7 +31,7 @@ def fetch_instances_from_api() -> List[Dict[str, Any]]:
             if isinstance(raw_list, list):
                 instances = raw_list
             else:
-                instances = list(data.values())[0] if data.values() else []
+                instances = next((v for v in data.values() if isinstance(v, list)), [])
         elif isinstance(data, list):
             instances = data
         else:
@@ -48,50 +39,56 @@ def fetch_instances_from_api() -> List[Dict[str, Any]]:
 
         out: List[Dict[str, Any]] = []
         for it in instances or []:
-            name = (it or {}).get("name") or ""
-            token = (it or {}).get("token") or ""
-            number = (it or {}).get("number") or ""       # número do cadastro
-            cstatus = (it or {}).get("connectionStatus") or ""
-            owner_jid = (it or {}).get("ownerJid") or ""  # jid do aparelho logado
+            item = it or {}
+            name = _pick_first(item, ["name", "instanceName", "instance"])
+            token = _pick_first(item, ["token", "apikey", "apiKey", "key"])
+            number = _pick_first(item, ["number", "instance_number", "customer_number"])
+            cstatus = _pick_first(item, ["connectionStatus", "connection_status", "status"]) or ""
+            owner_jid = _pick_first(item, ["ownerJid", "owner_jid"]) or ""
 
             if not name or not token:
                 continue
 
-            out.append({
-                "name": name,
-                "key": token,
-                "customer_number": number,
-                "instance_number": number,
-                "owner_jid": owner_jid,
-                "connection_status": str(cstatus).lower()
-            })
+            out.append(
+                {
+                    "name": str(name),
+                    "key": str(token),
+                    "customer_number": str(number or ""),
+                    "instance_number": str(number or ""),
+                    "owner_jid": str(owner_jid or ""),
+                    "connection_status": str(cstatus).lower(),
+                }
+            )
 
         return out
 
     except Exception as e:
-        print(f"[ERRO] Falha ao buscar instâncias na API: {e}")
+        print(f"[ERRO] Falha ao buscar instancias na API: {e}")
         return []
 
 
-def fetch_qr_code_status(instanceName: str, apikey: str) -> Dict[str, Any]:
-    """
-    Retorna:
-      - {"qrcode": <code>, "status": "qr_code"} se houver QR
-      - {"qrcode": None, "status": "connected"} se já conectado
-      - {"qrcode": None, "status": "unknown"|"error", ...} para outros casos
-    """
+def fetch_qr_code_status(instance_name: str, apikey: str) -> Dict[str, Any]:
     try:
-        url = build_url(f"/instance/connect/{instanceName}")
+        url = build_url(f"/instance/connect/{instance_name}")
         headers = {"apikey": apikey}
         rqs = requests.get(url, headers=headers, verify=False, timeout=10)
+        rqs.raise_for_status()
         data = rqs.json()
 
-        code = data.get("code")
+        code = (
+            data.get("code")
+            or data.get("base64")
+            or data.get("qrcode")
+            or (data.get("qr") or {}).get("code")
+            or (data.get("qrcode") or {}).get("code")
+            or (data.get("qrcode") or {}).get("base64")
+        )
         if code:
             return {"qrcode": code, "status": "qr_code"}
 
-        state = str(data.get("instance", {}).get("state", "")).lower()
-        if state == "open":
+        state = str((data.get("instance") or {}).get("state", "")).lower()
+        root_status = str(data.get("status", "")).lower()
+        if state == "open" or root_status in ("open", "connected"):
             return {"qrcode": None, "status": "connected"}
 
         return {"qrcode": None, "status": "unknown", "raw": data}
@@ -99,13 +96,11 @@ def fetch_qr_code_status(instanceName: str, apikey: str) -> Dict[str, Any]:
         return {
             "qrcode": None,
             "status": "error",
-            "message": "Não foi possível obter o status do servidor."
+            "message": "Nao foi possivel obter o status do servidor.",
         }
 
+
 def logout_instance(instance: str, apikey: str) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Desloga a instância usando o mesmo domínio configurado via EVOLUTION_DOMAIN.
-    """
     try:
         url = build_url(f"/instance/logout/{instance}")
         headers = {"apikey": apikey}

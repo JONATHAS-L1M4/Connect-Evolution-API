@@ -23,6 +23,6 @@ RUN useradd -ms /bin/bash appuser
 USER appuser
 
 # As portas expostas aqui são informativas; o Nginx acessa via rede interna
-EXPOSE 8501 8502
+EXPOSE 80
 
 # O comando é definido por serviço no docker-compose

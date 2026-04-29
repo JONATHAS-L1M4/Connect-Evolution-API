@@ -36,9 +36,12 @@ def ui_connect(request: Request):
     try:
         _ = guard_and_get_payload(token)
     except HTTPException as e:
+        detail = str(e.detail) if e.detail else "Link invalido ou expirado"
+        if detail.strip().lower() in {"link inválido ou expirado", "link invalido ou expirado"}:
+            detail = ""
         context = {
             "token": token,
-            "error_message": str(e.detail) if e.detail else "Link invalido ou expirado",
+            "error_message": detail,
             "show_redis_hint": False,
         }
         resp = templates.TemplateResponse(request, "invalid.html", context, status_code=e.status_code)

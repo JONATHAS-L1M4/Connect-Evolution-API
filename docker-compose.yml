@@ -1,9 +1,4 @@
 services:
-  redis:
-    image: redis:7-alpine
-    restart: always
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
-
   app:
     build:
       context: .
@@ -12,8 +7,6 @@ services:
     env_file:
       - .env
     restart: always
-    depends_on:
-      - redis
 
   scanner:
     build:
@@ -23,5 +16,3 @@ services:
     env_file:
       - .env
     restart: always
-    depends_on:
-      - redis

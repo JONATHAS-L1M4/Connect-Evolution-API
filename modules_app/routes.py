@@ -22,7 +22,11 @@ def ui_connect(request: Request):
     try:
         _ = guard_and_get_payload(token)
     except HTTPException as e:
-        resp = templates.TemplateResponse(request, "invalid.html", {}, status_code=e.status_code)
+        context = {
+            "token": token,
+            "error_message": str(e.detail) if e.detail else "Link invalido ou expirado",
+        }
+        resp = templates.TemplateResponse(request, "invalid.html", context, status_code=e.status_code)
         resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         resp.headers["Pragma"] = "no-cache"
         resp.headers["Expires"] = "0"

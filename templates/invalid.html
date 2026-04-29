@@ -3,54 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Link inválido</title>
-
-  <!-- Importante: crawlers do WhatsApp/FB não executam JS -->
+  <title>Link invalido</title>
   <meta name="robots" content="noindex,nofollow" />
   <link rel="canonical" href="{{ request.url }}">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/img/favicon.png') }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/img/favicon.png') }}">
-  <!-- (Opcional) Apple Touch (se o mesmo png servir) -->
   <link rel="apple-touch-icon" href="{{ url_for('static', path='/img/favicon.png') }}">
-  <!-- (Compatibilidade) shortcut icon -->
   <link rel="shortcut icon" href="{{ url_for('static', path='/img/favicon.png') }}">
-
-  <!-- Open Graph (WhatsApp / Facebook / LinkedIn) -->
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pt_BR">
   <meta property="og:site_name" content="Evolution Instance Manager">
-  <meta property="og:title" content="Link inválido ou expirado">
-  <meta property="og:description" content="Acesse somente via link temporário válido.">
+  <meta property="og:title" content="Link invalido ou expirado">
+  <meta property="og:description" content="Acesse somente via link temporario valido.">
   <meta property="og:url" content="{{ request.url }}">
-  <!-- Use URL ABSOLUTA; request.url_for gera absoluta no FastAPI/Starlette -->
   <meta property="og:image" content="{{ request.url_for('static', path='/img/thumbnail.jpg') }}?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-
-  <!-- (Opcional) Twitter Card - não atrapalha o WhatsApp -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Link inválido ou expirado">
-  <meta name="twitter:description" content="Acesse somente via link temporário válido.">
+  <meta name="twitter:title" content="Link invalido ou expirado">
+  <meta name="twitter:description" content="Acesse somente via link temporario valido.">
   <meta name="twitter:image" content="{{ request.url_for('static', path='/img/thumbnail.jpg') }}">
-
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="relative min-h-screen bg-gray-50">
-  <!-- Fundo com imagem + desfoque (servida localmente) -->
   <div class="fixed inset-0 -z-10">
-    <img src="{{ url_for('static', path='/img/background.jpg') }}"
-         alt=""
-         class="w-full h-full object-cover blur-xl scale-110">
+    <img src="{{ url_for('static', path='/img/background.jpg') }}" alt="" class="w-full h-full object-cover blur-xl scale-110">
     <div class="absolute inset-0 bg-black/40"></div>
   </div>
 
   <div class="min-h-screen grid place-items-center px-4">
     <div class="w-full max-w-md bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow text-center">
-      <div class="text-5xl mb-4">🙁</div>
-      <h1 class="text-2xl font-semibold mb-2">Link inválido ou expirado</h1>
-      <p class="text-sm text-gray-600">Acesse somente via link temporário válido.</p>
+      <h1 class="text-2xl font-semibold mb-2">Link invalido ou expirado</h1>
+      <p class="text-sm text-gray-600">Acesse somente via link temporario valido.</p>
+      {% if error_message %}
+      <p class="mt-3 text-sm text-red-600">{{ error_message }}</p>
+      {% endif %}
+      <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-left">
+        <p class="text-xs font-semibold text-amber-800">Se houver erro no servidor</p>
+        <p class="mt-1 text-xs text-amber-900">
+          Configure a variavel <code>REDIS_URL</code> no ambiente
+          (exemplo: <code>redis://SEU_HOST_REDIS:6379/0</code>) e reinicie os servicos.
+        </p>
+      </div>
     </div>
   </div>
 </body>

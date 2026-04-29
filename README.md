@@ -18,7 +18,7 @@ Interface web + worker de varredura para facilitar a conexão de instâncias Wha
 
 ## Pré-requisitos
 - Python 3.11+ (imagem oficial `python:3.11-slim` no Dockerfile).
-- Redis 7+ (no Docker Compose já sobe automaticamente com `redis:7-alpine`).
+- Redis 7+ externo (gerenciado fora deste Compose).
 - Acesso à Evolution Global API (domínio + keys).
 
 ## Variáveis de ambiente (.env)
@@ -27,7 +27,7 @@ Interface web + worker de varredura para facilitar a conexão de instâncias Wha
 - `EVOLUTION_GLOBAL_KEY` – chave master usada pelo scanner para listar instâncias.
 - `EVOLUTION_INSTANCE_NAME_ADMIN` – nome da instância admin usada para enviar o link ao cliente.
 - `EVOLUTION_INSTANCE_KEY_ADMIN` – token da instância admin.
-- `REDIS_URL` (opcional) – URL do Redis (ex.: `redis://redis:6379/0`). Se ausente, o app tenta `redis` e depois `localhost`.
+- `REDIS_URL` (obrigatório) – URL do Redis (ex.: `redis://SEU_HOST_REDIS:6379/0`).
 - `APP_PORT` (opcional) – porta para `python app.py`; se não informar, usa `80` automaticamente.
 
 ## Como executar com Docker Compose
@@ -36,8 +36,7 @@ Interface web + worker de varredura para facilitar a conexão de instâncias Wha
 docker compose up -d --build
 ```
 Serviços criados:
-- `redis`: Redis em memória sem persistência.
-- `app`: uvicorn servindo o FastAPI (porta 80 interna, publicada como `http://localhost:8501` no host).
+- `app`: uvicorn servindo o FastAPI (porta 80 interna para o domínio/proxy do ambiente).
 - `scanner`: worker em loop contínuo (`python scan.py`).
 
 Logs podem ser vistos com `docker compose logs -f app` ou `docker compose logs -f scanner`.
@@ -76,7 +75,7 @@ O app monta arquivos estáticos em `/static` e desativa a documentação públic
 - O QR code contém credenciais de sessão; prefira manter o link restrito e com TTL curto.
 
 ## Solução de problemas
-- **“Redis indisponível”**: no Docker Compose, confirme se o serviço `redis` está saudável e se `app`/`scanner` estão na mesma rede do compose.
+- **“Redis indisponível”**: confirme se `REDIS_URL` está correto e se o Redis externo aceita conexão a partir do ambiente onde `app`/`scanner` estão rodando.
 - **“Link inválido ou expirado”**: token não está no Redis ou TTL expirou; peça um novo link ao scanner.
 - **QR não aparece**: confirme se o domínio Evolution está acessível e se a instância realmente está em estado `close/connecting`.
 - **Divergência de número**: o scanner fará logout automático se o `ownerJid` não coincidir com o número cadastrado.

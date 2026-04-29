@@ -13,34 +13,18 @@ load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL", "").rstrip("/")
 
-# padrão para Docker/EasyPanel: serviço chama "redis"
-PRIMARY_REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-
-# opcional: você pode pôr no painel: REDIS_FALLBACK_URLS=redis://localhost:6379/0
-FALLBACK_URLS = os.getenv("REDIS_FALLBACK_URLS", "")
+# conexao automatica: primeiro tenta o servico interno "redis" (Docker Compose),
+# depois localhost para execucao local sem Docker.
+REDIS_URLS = [
+    "redis://redis:6379/0",
+    "redis://localhost:6379/0",
+]
 
 _REDIS: Optional[redis.Redis] = None
 
 
 def _candidate_redis_urls() -> list[str]:
-    urls = [PRIMARY_REDIS_URL]
-
-    if FALLBACK_URLS:
-        for u in FALLBACK_URLS.split(","):
-            u = u.strip()
-            if u:
-                urls.append(u)
-
-    # alguns comuns, caso o .env esteja errado
-    commons = [
-        "redis://redis:6379/0",
-        "redis://localhost:6379/0",
-    ]
-    for c in commons:
-        if c not in urls:
-            urls.append(c)
-
-    return urls
+    return REDIS_URLS.copy()
 
 
 def _build_client(url: str) -> redis.Redis:
@@ -103,13 +87,6 @@ def init_db():
     if r is None:
         print("[WARN] Redis indisponível no init_db(); seguindo.")
     else:
-        # <<< AQUI entra o que você pediu
-        if os.getenv("REDIS_FLUSH_ON_START") == "1":
-            try:
-                r.flushall()
-                print("[INFO] Redis limpo porque REDIS_FLUSH_ON_START=1.")
-            except RedisError as exc:
-                print(f"[WARN] Não consegui dar FLUSHALL no Redis: {exc}")
         print("[INFO] Conexão com Redis OK.")
 
 

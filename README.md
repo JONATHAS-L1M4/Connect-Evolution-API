@@ -18,7 +18,7 @@ Interface web + worker de varredura para facilitar a conexão de instâncias Wha
 
 ## Pré-requisitos
 - Python 3.11+ (imagem oficial `python:3.11-slim` no Dockerfile).
-- Redis 7+ acessível (local ou hospedado).
+- Redis 7+ (no Docker Compose já sobe automaticamente com `redis:7-alpine`).
 - Acesso à Evolution Global API (domínio + keys).
 
 ## Variáveis de ambiente (.env)
@@ -27,10 +27,7 @@ Interface web + worker de varredura para facilitar a conexão de instâncias Wha
 - `EVOLUTION_GLOBAL_KEY` – chave master usada pelo scanner para listar instâncias.
 - `EVOLUTION_INSTANCE_NAME_ADMIN` – nome da instância admin usada para enviar o link ao cliente.
 - `EVOLUTION_INSTANCE_KEY_ADMIN` – token da instância admin.
-- `REDIS_URL` – URL completa do Redis (ex.: `redis://:senha@host:6379/0`).
-- `REDIS_FALLBACK_URLS` (opcional) – lista separada por vírgula de URLs alternativas de Redis.
-- `REDIS_FLUSH_ON_START` (opcional) – se `1`, limpa o Redis na inicialização (use só em dev).
-- `APP_PORT` (opcional) – porta para `python app.py`; no Docker Compose já é fixada em 80.
+- `APP_PORT` (opcional) – porta para `python app.py`; se não informar, usa `80` automaticamente.
 
 ## Como executar com Docker Compose
 ```bash
@@ -49,7 +46,7 @@ Logs podem ser vistos com `docker compose logs -f app` ou `docker compose logs -
 python -m venv .venv
 .\.venv\Scripts\activate    # PowerShell
 pip install -r requirements.txt
-# subir ou apontar para um Redis acessível e preencher .env
+# se quiser sobrescrever a porta padrão (80)
 set APP_PORT=8000
 python app.py       # servidor web
 python scan.py      # em outro terminal: worker de varredura
@@ -75,11 +72,10 @@ O app monta arquivos estáticos em `/static` e desativa a documentação públic
 ## Boas práticas e segurança
 - Use sempre HTTPS no domínio da Evolution API e no `BASE_URL`.
 - Trate as variáveis do `.env` como segredos; não reutilize valores de exemplo em produção.
-- `REDIS_FLUSH_ON_START=1` só deve ser usado em ambientes de teste.
 - O QR code contém credenciais de sessão; prefira manter o link restrito e com TTL curto.
 
 ## Solução de problemas
-- **“Redis indisponível”**: verifique `REDIS_URL` e conectividade; configure `REDIS_FALLBACK_URLS` se tiver réplicas.
+- **“Redis indisponível”**: no Docker Compose, confirme se o serviço `redis` está saudável e se `app`/`scanner` estão na mesma rede do compose.
 - **“Link inválido ou expirado”**: token não está no Redis ou TTL expirou; peça um novo link ao scanner.
 - **QR não aparece**: confirme se o domínio Evolution está acessível e se a instância realmente está em estado `close/connecting`.
 - **Divergência de número**: o scanner fará logout automático se o `ownerJid` não coincidir com o número cadastrado.

@@ -13,6 +13,8 @@ services:
       --port 80
       --proxy-headers
       --forwarded-allow-ips="*"
+    ports:
+      - "8501:80"
     env_file: .env
     restart: always
     depends_on:

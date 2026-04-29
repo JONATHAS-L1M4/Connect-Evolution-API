@@ -27,6 +27,7 @@ Interface web + worker de varredura para facilitar a conexão de instâncias Wha
 - `EVOLUTION_GLOBAL_KEY` – chave master usada pelo scanner para listar instâncias.
 - `EVOLUTION_INSTANCE_NAME_ADMIN` – nome da instância admin usada para enviar o link ao cliente.
 - `EVOLUTION_INSTANCE_KEY_ADMIN` – token da instância admin.
+- `REDIS_URL` (opcional) – URL do Redis (ex.: `redis://redis:6379/0`). Se ausente, o app tenta `redis` e depois `localhost`.
 - `APP_PORT` (opcional) – porta para `python app.py`; se não informar, usa `80` automaticamente.
 
 ## Como executar com Docker Compose
@@ -36,7 +37,7 @@ docker compose up -d --build
 ```
 Serviços criados:
 - `redis`: Redis em memória sem persistência.
-- `app`: uvicorn servindo o FastAPI (porta 80 interna).
+- `app`: uvicorn servindo o FastAPI (porta 80 interna, publicada como `http://localhost:8501` no host).
 - `scanner`: worker em loop contínuo (`python scan.py`).
 
 Logs podem ser vistos com `docker compose logs -f app` ou `docker compose logs -f scanner`.

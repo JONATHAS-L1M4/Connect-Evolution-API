@@ -13,8 +13,10 @@ load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL", "").rstrip("/")
 
-# conexao automatica: primeiro tenta o servico interno "redis" (Docker Compose),
-# depois localhost para execucao local sem Docker.
+# conexao automatica:
+# 1) usa REDIS_URL do ambiente quando informado (ex.: EasyPanel);
+# 2) fallback para servico interno "redis" (Docker Compose);
+# 3) fallback para localhost na execucao local sem Docker.
 REDIS_URLS = [
     "redis://redis:6379/0",
     "redis://localhost:6379/0",
@@ -24,7 +26,15 @@ _REDIS: Optional[redis.Redis] = None
 
 
 def _candidate_redis_urls() -> list[str]:
-    return REDIS_URLS.copy()
+    env_url = (os.getenv("REDIS_URL") or "").strip()
+    if not env_url:
+        return REDIS_URLS.copy()
+
+    urls = [env_url]
+    for default_url in REDIS_URLS:
+        if default_url != env_url:
+            urls.append(default_url)
+    return urls
 
 
 def _build_client(url: str) -> redis.Redis:

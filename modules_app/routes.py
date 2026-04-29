@@ -22,13 +22,13 @@ def ui_connect(request: Request):
     try:
         _ = guard_and_get_payload(token)
     except HTTPException as e:
-        resp = templates.TemplateResponse("invalid.html", {"request": request}, status_code=e.status_code)
+        resp = templates.TemplateResponse(request, "invalid.html", {}, status_code=e.status_code)
         resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         resp.headers["Pragma"] = "no-cache"
         resp.headers["Expires"] = "0"
         return resp
 
-    resp = templates.TemplateResponse("connect.html", {"request": request, "token": token})
+    resp = templates.TemplateResponse(request, "connect.html", {"token": token})
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"

@@ -1,4 +1,5 @@
 import base64
+import os
 from io import BytesIO
 from typing import Dict, Any
 
@@ -18,6 +19,19 @@ router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
 def ui_connect(request: Request):
+    redis_url = (os.getenv("REDIS_URL") or "").strip()
+    if not redis_url:
+        context = {
+            "token": None,
+            "error_message": "Configuracao obrigatoria ausente: defina REDIS_URL para manter o servico ativo.",
+            "show_redis_hint": True,
+        }
+        resp = templates.TemplateResponse(request, "invalid.html", context, status_code=200)
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
+
     token = request.query_params.get("t")
     try:
         _ = guard_and_get_payload(token)
@@ -25,6 +39,7 @@ def ui_connect(request: Request):
         context = {
             "token": token,
             "error_message": str(e.detail) if e.detail else "Link invalido ou expirado",
+            "show_redis_hint": False,
         }
         resp = templates.TemplateResponse(request, "invalid.html", context, status_code=e.status_code)
         resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
